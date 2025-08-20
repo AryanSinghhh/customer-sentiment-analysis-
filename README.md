@@ -32,14 +32,7 @@ Input Review: "The product quality is amazing and delivery was super fast!"
 Predicted Sentiment: Positive ✅
 Input Review: "Worst customer service I’ve ever experienced."
 Predicted Sentiment: Negative ❌
-🚀 Installation & Usage
-1. Clone the repository
-git clone https://github.com/username/customer-sentiment-analysis.git
-cd customer-sentiment-analysis
-2. Install dependencies
-pip install -r requirements.txt
-3. Run the project
-python sentiment_analysis.py
+
 📈 Future Improvements
 Integrate deep learning models (e.g., LSTM, BERT) for better accuracy.
 Support multi-class emotion detection (e.g., joy, anger, sadness).
