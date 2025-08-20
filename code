@@ -1,0 +1,128 @@
+import pandas as pd
+import random
+import re
+import string
+import nltk
+nltk.download('stopwords')
+from nltk.corpus import stopwords
+
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import accuracy_score, classification_report
+
+
+# Sample reviews
+positive_reviews = [
+    "This movie was amazing! I loved the acting and the story.",
+    "Absolutely fantastic film, great visuals and music.",
+    "A masterpiece of modern cinema. Brilliantly directed.",
+    "Outstanding performance by the lead actor, loved it!",
+    "Such a beautiful story and well-written characters.",
+    "The movie exceeded my expectations, brilliant work.",
+    "Fantastic experience, will definitely watch again.",
+    "Heartwarming and emotional, loved every moment.",
+    "Superb screenplay and excellent direction.",
+    "Great casting choices and powerful performance.",
+    "Beautifully shot and engaging story.",
+    "An excellent movie with strong emotional impact.",
+    "One of the best films I have seen this year.",
+    "Inspirational and beautifully made.",
+    "Loved the music, story, and characters.",
+    "Worth watching, a truly great experience.",
+    "Absolutely loved this film from start to finish.",
+    "A cinematic masterpiece worth every award.",
+    "Emotionally powerful and perfectly executed.",
+    "Highly recommended for everyone to watch."
+]
+
+negative_reviews = [
+    "Terrible movie. Waste of time and money.",
+    "Not good at all, acting was horrible and plot made no sense.",
+    "I hated this movie, worst experience ever.",
+    "Awful script and bad acting. Don't watch it.",
+    "The pacing was slow and story was boring.",
+    "Bad direction and weak performances.",
+    "Disappointing movie with poor execution.",
+    "Terrible editing and confusing plot.",
+    "The movie lacked depth and emotion.",
+    "Waste of time, not worth watching.",
+    "Horrible experience, regret watching it.",
+    "The storyline was flat and predictable.",
+    "Not worth the hype at all.",
+    "A very boring and lifeless movie.",
+    "The acting was stiff and unrealistic.",
+    "Poor screenplay and lazy writing.",
+    "Nothing new, just another dull film.",
+    "The film was long and tedious to watch.",
+    "Disappointing performances and weak story.",
+    "Definitely not recommended to anyone."
+]
+
+# Create dataset
+data = []
+for _ in range(50):
+    data.append([random.choice(positive_reviews), "positive"])
+    data.append([random.choice(negative_reviews), "negative"])
+
+df = pd.DataFrame(data, columns=["review", "sentiment"])
+print(df.head())
+
+# Encode labels
+df['sentiment'] = df['sentiment'].map({'positive': 1, 'negative': 0})
+
+# Text cleaning
+def clean_text(text):
+    text = text.lower()
+    text = re.sub(r'\[.*?\]', '', text)
+    text = re.sub(r'http\S+', '', text)
+    text = re.sub(r'<.*?>+', '', text)
+    text = re.sub(r'[%s]' % re.escape(string.punctuation), '', text)
+    text = re.sub(r'\n', '', text)
+    text = re.sub(r'\w*\d\w*', '', text)
+    return text
+
+# Keep negations (important for sentiment)
+stop_words = set(stopwords.words('english')) - {'not', 'no', 'nor', 'never'}
+
+def remove_stopwords(text):
+    return " ".join([word for word in text.split() if word not in stop_words])
+
+df['cleaned'] = df['review'].apply(lambda x: remove_stopwords(clean_text(x)))
+
+# TF-IDF Vectorizer
+vectorizer = TfidfVectorizer(max_features=5000)
+X = vectorizer.fit_transform(df['cleaned'])
+y = df['sentiment']
+
+# Train-test split
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Train model
+model = LogisticRegression()
+model.fit(X_train, y_train)
+
+# Evaluate
+y_pred = model.predict(X_test)
+print("\n✅ Accuracy:", accuracy_score(y_test, y_pred))
+print("\n📊 Classification Report:\n", classification_report(y_test, y_pred))
+
+# Prediction function
+def predict_sentiment(text):
+    cleaned = remove_stopwords(clean_text(text))
+    vectorized = vectorizer.transform([cleaned])
+    prediction = model.predict(vectorized)[0]
+    return "Positive" if prediction == 1 else "Negative"
+
+# Test reviews
+test_reviews = [
+    "Absolutely loved this film from start to finish.",
+    "Disappointing movie with poor execution.",
+    "Great casting choices and powerful performance.",
+    "A very boring and lifeless movie.",
+    "A cinematic masterpiece worth every award."
+]
+
+print("\n🔍 Sentiment Predictions:")
+for review in test_reviews:
+    print(f"Review: {review}\nSentiment: {predict_sentiment(review)}\n")
